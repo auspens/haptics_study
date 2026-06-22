@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.view.HapticFeedbackConstants
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -46,10 +47,13 @@ class MainActivity : ComponentActivity() {
 
                     Column(
                         verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier
+                            .padding(innerPadding)
                             .verticalScroll(rememberScrollState())
                     ) {
-                        Text (
+                        //Android's Vibration Effect is a low level API that gives you more control over the haptic feedback, allowing you to create custom vibration patterns and effects.
+                        // It is more flexible and can be used for a wider range of haptic feedback scenarios.
+                        Text(
                             text = "Android VibrationEffect",
                             modifier = Modifier.padding(16.dp)
                         )
@@ -58,13 +62,25 @@ class MainActivity : ComponentActivity() {
                         HeavyImpact()
                         WaveForm()
 
-                        Text (
+                        //Haptics library from JetPack compose, closer to the iOS haptics and tied to user interactions (clicks, long clicks, etc).
+                        // It is a higher level API with less control over the settings (duration, amplitude, etc)
+                        Text(
                             text = "JetPack Compose Haptics",
                             modifier = Modifier.padding(16.dp)
                         )
                         LongClick()
                         Confirm()
                         Reject()
+
+                        // Android's View.performHapticFeedback is an API that provides basic haptic feedback for specific user interactions, such as key presses or long clicks.
+                        // From sensory point close to the JetPack compose haptics. Different min API requirements (from API 5 to API 34) and tied to user interactions on views.
+                        Text(
+                            text = "View Haptics",
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        KeyboardTap()
+                        ContextClick()
+                        KeyBoardTap()
                     }
                 }
             }
@@ -72,6 +88,30 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
+@Composable
+fun KeyboardTap() {
+    val view = androidx.compose.ui.platform.LocalView.current
+    ButtonModel("Keyboard Tap") {
+        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+    }
+}
+
+@Composable
+fun ContextClick() {
+    val view = androidx.compose.ui.platform.LocalView.current
+    ButtonModel("Context Click") {
+        view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+    }
+}
+
+@Composable
+fun KeyBoardTap() {
+    val view = androidx.compose.ui.platform.LocalView.current
+    ButtonModel("Keyboard Tap") {
+        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+    }
+}
 
 @Composable
 fun LongClick() {
@@ -100,57 +140,36 @@ fun Reject() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LightImpact() {
-    var hapticEngine by remember { mutableStateOf<VibrationEffect?>(null) }
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        val duration = 50L
-        val amplitude = 50
-        hapticEngine = VibrationEffect.createOneShot(duration, amplitude)
-    }
     ButtonModel(
         "Light Impact", {
-            hapticEngine?.let {
-                val vibrator = context.getSystemService(Vibrator::class.java)
-                vibrator.vibrate(it)
-            }
+            val vibrator = context.getSystemService(Vibrator::class.java)
+            val effect = VibrationEffect.createOneShot(50L, 50)
+            vibrator.vibrate(effect)
+
         })
 }
-
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MediumImpact() {
-    var hapticEngine by remember { mutableStateOf<VibrationEffect?>(null) }
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        val duration = 50L
-        val amplitude = 200
-        hapticEngine = VibrationEffect.createOneShot(duration, amplitude)
-    }
     ButtonModel(
         "Medium Impact", {
-            hapticEngine?.let {
-                val vibrator = context.getSystemService(Vibrator::class.java)
-                vibrator.vibrate(it)
-            }
+            val vibrator = context.getSystemService(Vibrator::class.java)
+            val effect = VibrationEffect.createOneShot(50L, 200)
+            vibrator.vibrate(effect)
         })
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HeavyImpact() {
-    var hapticEngine by remember { mutableStateOf<VibrationEffect?>(null) }
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        val duration = 50L
-        val amplitude = 255
-        hapticEngine = VibrationEffect.createOneShot(duration, amplitude)
-    }
     ButtonModel("Heavy Impact", {
-        hapticEngine?.let {
-            val vibrator = context.getSystemService(Vibrator::class.java)
-            vibrator.vibrate(it)
-        }
+        val vibrator = context.getSystemService(Vibrator::class.java)
+        val effect = VibrationEffect.createOneShot(50L, 255)
+        vibrator.vibrate(effect)
     })
 }
 
@@ -185,7 +204,8 @@ fun WaveForm() {
         val amplitudes = IntArray(numberOfPulses * 2)
 
         for (i in 0 until numberOfPulses) {
-            val amplitude = (maxAmplitude * (i + 1) / numberOfPulses) // Calculate increasing amplitude
+            val amplitude =
+                (maxAmplitude * (i + 1) / numberOfPulses) // Calculate increasing amplitude
             timings[i * 2] = spaceBetweenPulses // Space before the pulse
             timings[i * 2 + 1] = pulseDuration // Duration of the pulse
             amplitudes[i * 2] = 0 // Amplitude of the space
